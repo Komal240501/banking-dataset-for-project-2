@@ -33,9 +33,26 @@ def init_page(title: str, icon: str = "🏦") -> None:
 
     with st.sidebar:
         st.title("🏦 Banking Analytics Suite")
-        st.caption("Customers · Accounts · Cards · Loans · Transactions · Support")
+        st.caption(
+            "10 linked tables: Customers · Accounts · Cards · Loans · Loan payments · "
+            "Branches · Employees · Transactions · Card transactions · Support tickets"
+        )
         st.markdown("---")
     logout_button()
+
+
+def banner(title: str) -> None:
+    """Pink/maroon title banner matching the original Power BI report style."""
+    st.markdown(
+        f"""
+        <div style='background-color:#d98a8a;padding:16px 12px;border-radius:8px;
+                    border:3px solid #7a1f2b;text-align:center;margin-bottom:14px;'>
+            <span style='color:#4a0e14;font-style:italic;font-weight:800;
+                         font-size:2rem;'>{title}</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 @st.cache_data(show_spinner=False)
