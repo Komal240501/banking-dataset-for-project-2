@@ -39,6 +39,26 @@ DATE_COLS = {
     "support_ticket": ["DATE_OPENED", "DATE_RESOLVED"],
 }
 
+# Primary-key column per table, used to sort rows into a fixed, deterministic
+# order right after loading. Without this, the SAME code with the SAME
+# random_state can still produce a DIFFERENT train/test split (and therefore
+# different model metrics) depending on what row order the source happened
+# to come in — e.g. Snowflake/Databricks vs a Parquet export won't
+# necessarily return rows in the same order. Sorting first makes results
+# reproducible across environments, not just across reruns in one environment.
+ID_COLS = {
+    "customers": "CUSTOMER_ID",
+    "branches": "BRANCH_ID",
+    "employees": "EMPLOYEE_ID",
+    "accounts": "ACCOUNT_ID",
+    "cards": "CARD_ID",
+    "loan": "LOAN_ID",
+    "loan_payment": "PAYMENT_ID",
+    "transaction_list": "TXN_ID",
+    "card_transaction": "CARD_TXN_ID",
+    "support_ticket": "TICKET_ID",
+}
+
 
 @st.cache_data(show_spinner=False)
 def load_tables() -> dict[str, pd.DataFrame]:
@@ -62,6 +82,17 @@ def load_tables() -> dict[str, pd.DataFrame]:
             raise FileNotFoundError(f"Missing {filename} in /data.")
         df = pd.read_parquet(path)
         df.columns = [c.strip().upper() for c in df.columns]
+
+        # Sort into a fixed row order before anything else, so downstream
+        # train/test splits are reproducible across environments (see
+        # ID_COLS comment above). Falls back to sorting by every column if
+        # the expected ID column isn't present, rather than skipping
+        # silently — still deterministic, just less tidy.
+        id_col = ID_COLS.get(name)
+        if id_col and id_col in df.columns:
+            df = df.sort_values(id_col).reset_index(drop=True)
+        else:
+            df = df.sort_values(list(df.columns)).reset_index(drop=True)
 
         date_cols = DATE_COLS.get(name, [])
         for col in date_cols:
