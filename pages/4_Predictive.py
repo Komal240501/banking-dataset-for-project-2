@@ -150,17 +150,21 @@ if train_btn:
     else:  # model 3
         loan_full, customers = d["loan_full"], tables["customers"]
         loan_payment = tables["loan_payment"]
+        # NOTE: intentionally NOT using late_payments/late_ratio here — both are
+        # computed from the same LATE_PAYMENT_FLAG records that define the
+        # "ever_late" target itself, which caused the model to see the answer
+        # baked into its own features (data leakage -> a meaningless perfect
+        # 1.0 ROC-AUC/Recall/Precision). payments_made alone is safe: it's just
+        # a count of payments, not derived from lateness.
         pay_stats = loan_payment.groupby("LOAN_ID").agg(
-            payments_made=("PAYMENT_ID", "count"), late_payments=("LATE_PAYMENT_FLAG", "sum")
+            payments_made=("PAYMENT_ID", "count")
         ).reset_index()
-        pay_stats["late_ratio"] = pay_stats["late_payments"] / pay_stats["payments_made"]
 
         p3_df = loan_full.merge(pay_stats, on="LOAN_ID", how="left")
-        for c in ["payments_made", "late_payments", "late_ratio"]:
-            p3_df[c] = p3_df[c].fillna(0)
+        p3_df["payments_made"] = p3_df["payments_made"].fillna(0)
         p3_df = p3_df.merge(customers[["CUSTOMER_ID", "CREDIT_SCORE"]], on="CUSTOMER_ID")
 
-        feat_cols = ["CREDIT_SCORE", "LOAN_AMOUNT", "INTEREST_RATE", "payments_made", "late_ratio"]
+        feat_cols = ["CREDIT_SCORE", "LOAN_AMOUNT", "INTEREST_RATE", "payments_made"]
         model_df = p3_df[feat_cols + ["ever_late"]].dropna()
         X, y = model_df.drop(columns="ever_late"), model_df["ever_late"]
         if y.nunique() < 2:
