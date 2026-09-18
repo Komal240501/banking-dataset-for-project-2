@@ -20,23 +20,6 @@ st.write(
     "each run (fast on sample data; may take longer on large real exports)."
 )
 
-with st.expander("ℹ️ Why these numbers may differ slightly from the Databricks notebook", expanded=False):
-    st.markdown(
-        """
-        - **Row order:** Both this app and the notebook sort every table by its ID column
-          before training, so the same `random_state=42` train/test split lines up in both places.
-        - **Fraud-detection model only:** Streamlit Cloud has a limited memory budget
-          (~1GB), so the fraud model trains on a **stratified sample of up to 400,000 rows**
-          instead of the full `card_transaction` table (which can be 3M+ rows). The
-          fraud/legit ratio is preserved in the sample. If the notebook trains on the
-          full table without the same sampling step, its numbers for this model
-          specifically will differ from this app's — not an error, just a different
-          (smaller, memory-safe) training set.
-        - **Credit-default and late-payment models** train on the full loan data in both
-          places (loan counts are far smaller), so those two should match exactly.
-        """
-    )
-
 model_choice = st.selectbox(
     "Choose model",
     [
@@ -45,6 +28,23 @@ model_choice = st.selectbox(
         "3. Next-late-payment prediction (active loans)",
     ],
 )
+
+if model_choice.startswith("1."):
+    with st.expander("ℹ️ Why these numbers may differ slightly from the Databricks notebook", expanded=False):
+        st.markdown(
+            """
+            Streamlit Cloud has a limited memory budget (~1GB), so this fraud-detection
+            model trains on a **stratified sample of up to 400,000 rows** instead of the
+            full `card_transaction` table (which can be 3M+ rows) — the fraud/legit
+            ratio is preserved in the sample. Both this app and the notebook also sort
+            every table by its ID column before training, so the same
+            `random_state=42` split lines up in both places. If the Databricks notebook
+            trains on the full table without the same sampling step, its numbers for
+            **this model specifically** will differ from this app's — not an error, just
+            a different (smaller, memory-safe) training set.
+            """
+        )
+
 train_btn = st.button("Train model", type="primary")
 
 from sklearn.model_selection import train_test_split
