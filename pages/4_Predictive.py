@@ -89,9 +89,9 @@ if train_btn:
             y_pred_lr, y_prob_lr = lr.predict(X_test_s), lr.predict_proba(X_test_s)[:, 1]
             roc_lr = roc_auc_score(y_test, y_prob_lr)
 
-            rf = RandomForestClassifier(n_estimators=100, max_depth=5, class_weight="balanced", random_state=42)
-            rf.fit(X_train, y_train)
-            y_pred_rf, y_prob_rf = rf.predict(X_test), rf.predict_proba(X_test)[:, 1]
+            rf_fraud = RandomForestClassifier(n_estimators=100, max_depth=5, class_weight="balanced", random_state=42)
+            rf_fraud.fit(X_train, y_train)
+            y_pred_rf, y_prob_rf = rf_fraud.predict(X_test), rf_fraud.predict_proba(X_test)[:, 1]
             roc_rf = roc_auc_score(y_test, y_prob_rf)
 
             st.subheader("Model performance")
@@ -130,9 +130,9 @@ if train_btn:
             y_pred_lr, y_prob_lr = lr.predict(X_test_s), lr.predict_proba(X_test_s)[:, 1]
             roc_lr = roc_auc_score(y_test, y_prob_lr)
 
-            rf = RandomForestClassifier(n_estimators=200, max_depth=6, class_weight="balanced", random_state=42)
-            rf.fit(X_train, y_train)
-            y_pred_rf, y_prob_rf = rf.predict(X_test), rf.predict_proba(X_test)[:, 1]
+            rf_default = RandomForestClassifier(n_estimators=200, max_depth=6, class_weight="balanced", random_state=42)
+            rf_default.fit(X_train, y_train)
+            y_pred_rf, y_prob_rf = rf_default.predict(X_test), rf_default.predict_proba(X_test)[:, 1]
             roc_rf = roc_auc_score(y_test, y_prob_rf)
 
             st.subheader("Model performance")
@@ -141,7 +141,7 @@ if train_btn:
             plot_confusion(confusion_matrix(y_test, y_pred_rf), "Random Forest — Confusion Matrix",
                             labels=("No Default", "Default"))
 
-            importance = pd.Series(rf.feature_importances_, index=X.columns).sort_values(ascending=False)
+            importance = pd.Series(rf_default.feature_importances_, index=X.columns).sort_values(ascending=False)
             st.subheader("Feature importance (Random Forest)")
             st.bar_chart(importance)
             st.info(f"**Insight:** '{importance.index[0]}' is the strongest driver of default risk, "
@@ -174,9 +174,9 @@ if train_btn:
             y_pred_lr, y_prob_lr = lr.predict(X_test_s), lr.predict_proba(X_test_s)[:, 1]
             roc_lr = roc_auc_score(y_test, y_prob_lr)
 
-            rf = RandomForestClassifier(n_estimators=200, max_depth=6, class_weight="balanced", random_state=42)
-            rf.fit(X_train, y_train)
-            y_pred_rf, y_prob_rf = rf.predict(X_test), rf.predict_proba(X_test)[:, 1]
+            rf_latepay = RandomForestClassifier(n_estimators=200, max_depth=6, class_weight="balanced", random_state=42)
+            rf_latepay.fit(X_train, y_train)
+            y_pred_rf, y_prob_rf = rf_latepay.predict(X_test), rf_latepay.predict_proba(X_test)[:, 1]
             roc_rf = roc_auc_score(y_test, y_prob_rf)
 
             st.subheader("Model performance")
@@ -187,7 +187,7 @@ if train_btn:
 
             active_loans = p3_df[p3_df["STATUS"] == "Active"].copy()
             if len(active_loans):
-                active_loans["late_risk_score"] = rf.predict_proba(active_loans[feat_cols].fillna(0))[:, 1]
+                active_loans["late_risk_score"] = rf_latepay.predict_proba(active_loans[feat_cols].fillna(0))[:, 1]
                 st.subheader("Top 10 highest-risk active loans")
                 st.dataframe(
                     active_loans[["LOAN_ID", "CUSTOMER_ID", "late_risk_score"]]
